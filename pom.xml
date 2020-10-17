@@ -36,6 +36,13 @@
 		    <artifactId>jackson-core</artifactId>
 		</dependency>
 		
+		<!-- Unirest -->
+		<dependency>
+		    <groupId>com.konghq</groupId>
+		    <artifactId>unirest-java</artifactId>
+		    <version>3.11.02</version>
+		</dependency>
+		
     	<!-- Spring Framework -->
     	<dependency>
 			<groupId>org.springframework.boot</groupId>

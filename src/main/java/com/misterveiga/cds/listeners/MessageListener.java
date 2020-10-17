@@ -3,27 +3,30 @@
  */
 package com.misterveiga.cds.listeners;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
-import org.json.simple.JSONObject;
-import org.json.simple.JSONArray;
-import org.json.simple.parser.ParseException;
-import org.json.simple.parser.JSONParser;
-
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.misterveiga.cds.dto.TrelloListDTO;
 import com.misterveiga.cds.utils.Properties;
 import com.misterveiga.cds.utils.RegexConstants;
 import com.misterveiga.cds.utils.RoleUtils;
-import com.misterveiga.cds.dto;
 
+import kong.unirest.HttpResponse;
+import kong.unirest.Unirest;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-
-import com.konghq.unirest-java
 
 /**
  * The listener interface for receiving message events. The class that is
@@ -35,10 +38,17 @@ import com.konghq.unirest-java
  * @see MessageEvent
  */
 
+@Component
 public class MessageListener extends ListenerAdapter {
 
 	/** The log. */
 	private final Logger log = LoggerFactory.getLogger(MessageListener.class);
+
+	@Value("${trello.key}")
+	public static String trelloKey;
+
+	@Value("${trello.access.token}")
+	public static String trelloAccessToken;
 
 	/**
 	 * On message received.
@@ -97,8 +107,8 @@ public class MessageListener extends ListenerAdapter {
 			}
 			break;
 		case 3:
-			if (messageText.matches(RegexConstants.COMMAND_IA)
-				sendHisoryMessage(message, authorMention);
+			if (messageText.matches(RegexConstants.COMMAND_IA)) {
+				sendHistoryMessage(message, authorMention);
 			} else {
 				sendUnknownCommandMessage(message, authorMention);
 			}
@@ -110,6 +120,7 @@ public class MessageListener extends ListenerAdapter {
 		case -1: // Member with no command roles.
 			break;
 		}
+
 	}
 
 	private void sendHelpMessage(final Message message, final String authorMention) {
@@ -119,24 +130,31 @@ public class MessageListener extends ListenerAdapter {
 				.queue();
 	}
 
+	// TODO: As this invokes Trello API I would separate into its own class, such as
+	// Telegram implementation in com.misterveiga.cds.telegram.
 	private void sendHistoryMessage(final Message message, final String authorMention) {
-	/**
-		 * @param trello.key					the trello key
-		 * @param trello.access.token            the trello acess token
-	 */
+		try {
+			final HttpResponse<String> boardlists = Unirest
+					.get("https://api.trello.com/1/boards/5ed7949d405d7d6fd00c201c/lists").queryString("key", trelloKey)
+					.queryString("token", trelloAccessToken).asString();
 
-		@Value("${trello.key}") final String trelloKey) {}
-		@Value("${trello.access.token}") final String trelloAccessToken) {}
+			List<TrelloListDTO> trelloLists;
 
-		HttpResponse<String> boardlists = Unirest.get("https://api.trello.com/1/boards/5ed7949d405d7d6fd00c201c/lists")
-			.queryString("key", trelloKey)
-			.queryString("token", trelloAccessToken)
-			.asString();
+			trelloLists = Arrays.asList(new ObjectMapper().readValue(boardlists.getBody(), TrelloListDTO[].class));
 
-			TrelloListDTO trelloListDto  = objectMapper.readValue(boardLists, TrelloListDTO.class);
-			
-			log.info(TrelloListDTO);
-			for (TrelloListDTO list : lists) {}
+			for (final TrelloListDTO list : trelloLists) {
+				log.info(list.toString());
+			}
+
+		} catch (final JsonParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (final JsonMappingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (final IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
