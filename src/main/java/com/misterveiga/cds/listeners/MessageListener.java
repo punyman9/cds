@@ -8,14 +8,22 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.parser.ParseException;
+import org.json.simple.parser.JSONParser;
+
 import com.misterveiga.cds.utils.Properties;
 import com.misterveiga.cds.utils.RegexConstants;
 import com.misterveiga.cds.utils.RoleUtils;
+import com.misterveiga.cds.dto;
 
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+
+import com.konghq.unirest-java
 
 /**
  * The listener interface for receiving message events. The class that is
@@ -26,6 +34,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
  *
  * @see MessageEvent
  */
+
 public class MessageListener extends ListenerAdapter {
 
 	/** The log. */
@@ -44,6 +53,9 @@ public class MessageListener extends ListenerAdapter {
 
 		if (RoleUtils.findRole(event.getMember(), RoleUtils.ROLE_SERVER_MANAGER) != null) {
 			log.debug("Message received from a server manager.");
+			scanMessage(event.getMessage(), 4);
+		} else if (RoleUtils.findRole(event.getMember(), RoleUtils.ROLE_INTERNAL_AFFAIRS) != null) {
+			log.debug("Message received from an internal affairs member.");
 			scanMessage(event.getMessage(), 3);
 		} else if (RoleUtils.findRole(event.getMember(), RoleUtils.ROLE_SENIOR_COMMUNITY_SUPERVISOR) != null) {
 			log.debug("Message received from a senior community supervisor.");
@@ -73,13 +85,20 @@ public class MessageListener extends ListenerAdapter {
 		log.info("Command received from authorized user {}: {}", author.getEffectiveName(), messageText);
 
 		switch (i) {
-		case 3: // MGMT
+		case 4: // MGMT
 //			if (messageText.matches(RegexConstants.COMMAND_SET_COVERAGE_CHECK_TIMER)) {
 //				commandSetCoverageTimer(message, messageText, authorMention);
 //			} else 
 			if (messageText.matches(RegexConstants.COMMAND_HELP)
 					|| messageText.matches(RegexConstants.COMMAND_HELP_ALT)) {
 				sendHelpMessage(message, authorMention);
+			} else {
+				sendUnknownCommandMessage(message, authorMention);
+			}
+			break;
+		case 3:
+			if (messageText.matches(RegexConstants.COMMAND_IA)
+				sendHisoryMessage(message, authorMention);
 			} else {
 				sendUnknownCommandMessage(message, authorMention);
 			}
@@ -98,6 +117,27 @@ public class MessageListener extends ListenerAdapter {
 				.sendMessage(new StringBuilder().append(authorMention).append(" **Roblox Discord Services | Help**")
 						.append("\nPrefix for all commands: `rdss:<command>`").append("\nNothing to see here..."))
 				.queue();
+	}
+
+	private void sendHistoryMessage(final Message message, final String authorMention) {
+	/**
+		 * @param trello.key					the trello key
+		 * @param trello.access.token            the trello acess token
+	 */
+
+		@Value("${trello.key}") final String trelloKey) {}
+		@Value("${trello.access.token}") final String trelloAccessToken) {}
+
+		HttpResponse<String> boardlists = Unirest.get("https://api.trello.com/1/boards/5ed7949d405d7d6fd00c201c/lists")
+			.queryString("key", trelloKey)
+			.queryString("token", trelloAccessToken)
+			.asString();
+
+			TrelloListDTO trelloListDto  = objectMapper.readValue(boardLists, TrelloListDTO.class);
+			
+			log.info(TrelloListDTO);
+			for (TrelloListDTO list : lists) {}
+		}
 	}
 
 	private void sendUnknownCommandMessage(final Message message, final String authorMention) {
